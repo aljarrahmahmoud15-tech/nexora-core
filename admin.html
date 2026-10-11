@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex">
+<title>NEXORA · لوحة الإدارة</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#f3f6f9;--panel:#fff;--ink:#0d1b2a;--mute:#5d6d7e;--line:#dde4ec;--soft:#eaf1f7;--ok:#0a8f6a;--warn:#b7791f;--bad:#c53030;--sig:#0b7fa8;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px)}
+@media (prefers-color-scheme:dark){:root{--bg:#07111d;--panel:#0e1b2b;--ink:#e8f0f8;--mute:#8da0b3;--line:#1c2e44;--soft:#12243a;--ok:#3ddc9b;--warn:#f2c14e;--bad:#ff7a7a;--sig:#4cc9f0}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"IBM Plex Sans Arabic",system-ui,Tahoma,sans-serif;line-height:1.6;padding-bottom:calc(76px + env(safe-area-inset-bottom,0px))}
+.wrap{max-width:620px;margin:0 auto;padding:16px}
+h1{font-size:20px;margin:0}h2{font-size:16px;margin:18px 0 10px}
+.sub{color:var(--mute);font-size:13px}
+header{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:14px}
+button,input,select{font:inherit}
+input,select{width:100%;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:10px;font-size:15px}
+input[dir=ltr]{text-align:left}
+:focus-visible{outline:2px solid var(--sig);outline-offset:2px}
+label{display:grid;gap:4px;font-size:13px;color:var(--mute);margin-bottom:10px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:14px;margin-bottom:12px}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.btn{border:0;background:var(--sig);color:var(--bg);border-radius:10px;padding:11px 16px;font-weight:700;cursor:pointer}
+.btn.alt{background:none;border:1px solid var(--line);color:var(--ink);font-weight:500}
+.btn.sm{padding:6px 12px;font-size:13px}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.row{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--line)}
+.row:last-child{border-bottom:0}
+.row .t{font-weight:500}.row .m{font-size:12.5px;color:var(--mute)}
+.g{color:var(--ok)}.w{color:var(--warn)}.r{color:var(--bad)}
+code,.ltr{direction:ltr;unicode-bidi:isolate;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:13px}
+.err{color:var(--bad);font-size:14px;min-height:1.2em;margin:6px 0}
+.okmsg{border:1px solid var(--ok);border-radius:12px;padding:12px;margin-top:10px;font-size:14px}
+.pre{background:var(--soft);border-radius:10px;padding:10px;white-space:pre-wrap;direction:ltr;text-align:left;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:14px}
+nav{position:fixed;inset-inline:0;bottom:0;background:var(--panel);border-top:1px solid var(--line);display:flex;padding:6px 6px calc(6px + env(safe-area-inset-bottom,0px))}
+nav button{flex:1;border:0;background:none;color:var(--mute);padding:9px 2px;font-size:13px;border-radius:10px;cursor:pointer}
+nav button[aria-selected=true]{color:var(--sig);background:var(--soft);font-weight:700}
+.prev{display:flex;justify-content:space-between;gap:8px;font-size:13px;color:var(--mute);margin:4px 0 12px}
+.prev b{color:var(--ink)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header><div><h1>NEXORA · لوحة الإدارة</h1><div class="sub">صلاحية المالك</div></div><button class="btn alt sm" id="out" hidden>خروج</button></header>
+  <div id="login" class="card">
+    <label>رمز المالك<input id="tok" type="password" dir="ltr" autocomplete="off"></label>
+    <div class="err" id="lerr" role="alert"></div>
+    <button class="btn" id="go">دخول</button>
+    <div class="sub" style="margin-top:10px">الرمز يبقى في ذاكرة الصفحة فقط ويُمحى عند الخروج أو الإغلاق.</div>
+  </div>
+  <div id="view"></div>
+</div>
+<nav id="nav" role="tablist" hidden>
+  <button role="tab" data-t="book" aria-selected="true">حجز جديد</button>
+  <button role="tab" data-t="bookings" aria-selected="false">الحجوزات</button>
+  <button role="tab" data-t="wallets" aria-selected="false">الأرصدة</button>
+  <button role="tab" data-t="cards" aria-selected="false">البطاقات</button>
+  <button role="tab" data-t="audit" aria-selected="false">التدقيق</button>
+</nav>
+<script src="admin.js"></script>
+</body>
+</html>
