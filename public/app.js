@@ -10,6 +10,7 @@
   function stat(l, v) { var d = el('div', '', l); d.appendChild(el('b', '', String(v))); return d; }
 
   function waState(b) {
+    if (b.waManual) return b.wa;
     if (!b.last_seen || Date.now() - new Date(b.last_seen).getTime() > STALE) return 'stale';
     return b.wa;
   }
@@ -80,14 +81,49 @@
     v.appendChild(list);
   }
 
-  function saveInvite(b, input, err, btn) {
-    var g = input.value.trim(); err.textContent = '';
-    if (g && g.indexOf('https://chat.whatsapp.com/') !== 0) { err.textContent = 'الرابط يجب أن يبدأ بـ https://chat.whatsapp.com/'; return; }
-    btn.disabled = true;
-    api('PUT', '/api/m/bots/' + encodeURIComponent(b.id) + '/group', { invite: g })
-      .then(function () { return load(); })
-      .catch(function (e) { err.textContent = e.status === 401 ? 'انتهت الجلسة، ادخل من جديد.' : 'تعذّر الحفظ.'; })
-      .then(function () { btn.disabled = false; });
+  var flash = null;
+  function act(label, url) {
+    var a = el('a', '', url ? label : label + ' (أضف الرابط)');
+    if (url) { a.href = url; a.target = '_blank'; a.rel = 'noopener noreferrer'; } else a.setAttribute('aria-disabled', 'true');
+    return a;
+  }
+  function field(label, input) { var l = el('label', '', label); l.appendChild(input); return l; }
+  function inp(type, val, ltr) { var i = el('input'); i.type = type; i.value = val == null ? '' : val; if (ltr) i.setAttribute('dir', 'ltr'); return i; }
+
+  function profileForm(b, o, cap) {
+    var f = el('div', 'fm');
+    var name = inp('text', o.name);
+    var wa = el('select');
+    [['ready', 'جاهزة'], ['off', 'غير مرتبطة']].forEach(function (x) {
+      var op = el('option', '', x[1]); op.value = x[0]; if ((b.wa === 'ready' ? 'ready' : 'off') === x[0]) op.selected = true; wa.appendChild(op);
+    });
+    var cp = inp('number', b.captains); cp.min = 0; cp.max = cap;
+    var rq = inp('number', b.requests); rq.min = 0;
+    var gu = inp('url', o.group_invite, true); gu.placeholder = 'https://chat.whatsapp.com/…';
+    var au = inp('url', o.admin_url, true); au.placeholder = 'https://…';
+    f.appendChild(field('اسم البوت', name));
+    f.appendChild(field('جلسة واتساب', wa));
+    var two = el('div', 'two'); two.appendChild(field('كباتن القروب (حتى ' + cap + ')', cp)); two.appendChild(field('طلبات مفتوحة', rq)); f.appendChild(two);
+    f.appendChild(field('رابط دعوة القروب', gu));
+    f.appendChild(field('رابط لوحة الإدارة', au));
+    var er = el('div', 'err'); er.setAttribute('role', 'alert'); f.appendChild(er);
+    var go = el('button', 'btn pri', 'حفظ التغييرات'); go.type = 'button';
+    go.addEventListener('click', function () {
+      var c = parseInt(cp.value, 10), r = parseInt(rq.value, 10), g = gu.value.trim(), a = au.value.trim();
+      er.textContent = '';
+      if (!name.value.trim()) { er.textContent = 'اكتب اسم البوت.'; return; }
+      if (isNaN(c) || c < 0 || c > cap) { er.textContent = 'عدد الكباتن يجب أن يكون بين 0 و' + cap + '.'; return; }
+      if (isNaN(r) || r < 0) { er.textContent = 'عدد الطلبات يجب أن يكون 0 أو أكثر.'; return; }
+      if (g && g.indexOf('https://chat.whatsapp.com/') !== 0) { er.textContent = 'رابط القروب يجب أن يبدأ بـ https://chat.whatsapp.com/'; return; }
+      if (a && a.indexOf('https://') !== 0) { er.textContent = 'رابط لوحة الإدارة يجب أن يبدأ بـ https://'; return; }
+      go.disabled = true; go.textContent = 'جارٍ الحفظ…';
+      api('PUT', '/api/m/bots/' + encodeURIComponent(b.id) + '/profile',
+        { name: name.value.trim(), wa: wa.value, captains: c, requests: r, invite: g, adminUrl: a })
+        .then(function () { flash = b.id; return load(); })
+        .catch(function (e) { go.disabled = false; go.textContent = 'حفظ التغييرات'; er.textContent = e.status === 401 ? 'انتهت الجلسة، ادخل من جديد.' : 'تعذّر الحفظ، حاول مرة أخرى.'; });
+    });
+    f.appendChild(go);
+    return f;
   }
 
   function viewBots(v) {
@@ -99,19 +135,14 @@
       h.appendChild(el('span', 'tag' + (ok ? ' ok' : ''), ok ? 'يعمل' : WA[st][0])); c.appendChild(h);
       c.appendChild(part('جلسة واتساب', WA[st][0], WA[st][1]));
       c.appendChild(part('قروب واتساب', b.groupLinked ? 'مرتبط' : 'بانتظار رابط الدعوة', b.groupLinked ? 'g' : 'w'));
+      c.appendChild(part('لوحة الإدارة', b.adminLinked ? 'متاحة' : 'بانتظار الرابط', b.adminLinked ? 'g' : 'w'));
       c.appendChild(part('السلطة', b.authority === 'nexora' ? 'NEXORA' : 'V26', b.authority === 'nexora' ? 'g' : ''));
-      var s = el('div', 'stats'); s.appendChild(stat('كباتن القروب', b.captains + ' من ' + cap)); s.appendChild(stat('طلبات مفتوحة', b.requests)); c.appendChild(s);
+      var s = el('div', 'stats'); s.appendChild(stat('كباتن القروب', b.captains + ' / ' + cap)); s.appendChild(stat('طلبات مفتوحة', b.requests)); c.appendChild(s);
       var bar = el('div', 'bar'), fi = el('i'); fi.style.width = Math.min(100, Math.round(b.captains / cap * 100)) + '%'; fi.style.background = ACC[i % 5]; bar.appendChild(fi); c.appendChild(bar);
       if (token && o) {
-        var fm = el('div', 'fm'), inp = el('input'); inp.type = 'url'; inp.setAttribute('dir', 'ltr'); inp.placeholder = 'https://chat.whatsapp.com/…'; inp.value = o.group_invite || '';
-        var er = el('div', 'err'); er.setAttribute('role', 'alert');
-        var sv = el('button', 'btn pri', o.group_invite ? 'تحديث رابط القروب' : 'حفظ رابط القروب'); sv.type = 'button';
-        sv.addEventListener('click', function () { saveInvite(b, inp, er, sv); });
-        fm.appendChild(inp); fm.appendChild(er); fm.appendChild(sv); c.appendChild(fm);
-        var ac = el('div', 'acts'), g = el('a', '', 'فتح القروب');
-        if (o.group_invite) { g.href = o.group_invite; g.target = '_blank'; g.rel = 'noopener noreferrer'; } else g.setAttribute('aria-disabled', 'true');
-        var p = el('a', '', 'لوحة الإدارة'); p.href = '/admin/';
-        ac.appendChild(p); ac.appendChild(g); c.appendChild(ac);
+        var ac = el('div', 'acts'); ac.appendChild(act('فتح لوحة البوت', o.admin_url)); ac.appendChild(act('فتح القروب', o.group_invite)); c.appendChild(ac);
+        c.appendChild(profileForm(b, o, cap));
+        if (flash === b.id) c.appendChild(el('div', 'ok-note', 'تم حفظ التغييرات.'));
         var tk = el('button', 'btn', 'إصدار رمز التوثيق للبوت'); tk.type = 'button'; tk.style.marginTop = '10px';
         var tout = el('div');
         tk.addEventListener('click', function () {
@@ -126,7 +157,7 @@
       }
       v.appendChild(c);
     });
-    if (!token) v.appendChild(el('div', 'note', 'روابط القروبات وتعديلها يظهران بعد دخول المالك.'));
+    if (!token) v.appendChild(el('div', 'note', 'الروابط وتعديل بيانات البوتات يظهران بعد دخول المالك.'));
   }
 
   function viewLog(v) {
@@ -181,7 +212,11 @@
     });
   });
   $('#refresh').addEventListener('click', load);
-  setInterval(function () { if (!document.hidden) load(); }, EVERY);
+  setInterval(function () {
+    var ae = document.activeElement;
+    if (document.hidden || (ae && /^(INPUT|SELECT|TEXTAREA)$/.test(ae.tagName) && ae.closest && ae.closest('#view'))) return;
+    load();
+  }, EVERY);
   load();
   if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(function () {});
 })();

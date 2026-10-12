@@ -155,3 +155,9 @@ create table if not exists cards (
   used_at             timestamptz,
   used_by_captain_id  bigint references captains(id)
 );
+
+-- Owner-editable bot profile (matches the approved design). All empty by default.
+alter table bots add column if not exists admin_url text;
+alter table bots add column if not exists captains_manual int;
+alter table bots add column if not exists requests_manual int;
+alter table bots add column if not exists wa_manual text check (wa_manual in ('ready','off'));

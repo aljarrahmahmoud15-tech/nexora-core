@@ -63,6 +63,10 @@ input[dir=ltr]{text-align:left}
 code{direction:ltr;unicode-bidi:isolate;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:13px}
 .tk{display:block;word-break:break-all;background:var(--soft);padding:10px;border-radius:10px;margin-top:6px}
 .note{font-size:12.5px;color:var(--mute);text-align:center;margin-top:14px}
+label{display:grid;gap:4px;font-size:13px;color:var(--mute)}
+select{width:100%;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:10px;font-size:15px;font:inherit}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.ok-note{color:var(--ok);font-size:13px}
 nav{position:fixed;inset-inline:0;bottom:0;background:var(--panel);border-top:1px solid var(--line);display:flex;padding:6px 8px calc(6px + env(safe-area-inset-bottom,0px))}
 nav button{flex:1;border:0;background:none;color:var(--mute);padding:10px 4px;font-size:13.5px;border-radius:10px;cursor:pointer}
 nav button[aria-selected=true]{color:var(--sig);background:var(--soft);font-weight:700}

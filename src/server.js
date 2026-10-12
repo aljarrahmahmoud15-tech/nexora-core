@@ -20,10 +20,10 @@ app.get('/api/telemetry', wrap(async (req, res) => {
   res.set('Cache-Control', 'no-store');
   const cap = await q("select (value #>> '{}')::int as n from rules where key='captain_capacity'");
   const { rows } = await q(`
-    select b.id, b.name, b.code, b.authority, b.wa_status as wa, b.last_seen,
-      (select count(*)::int from captains c where c.bot_id=b.id and c.status='active') as captains,
-      (select count(*)::int from requests r where r.bot_id=b.id and r.status='open') as requests,
-      (b.group_invite is not null) as "groupLinked"
+    select b.id, b.name, b.code, b.authority, coalesce(b.wa_manual, b.wa_status) as wa, (b.wa_manual is not null) as "waManual", b.last_seen,
+      coalesce(b.captains_manual, (select count(*)::int from captains c where c.bot_id=b.id and c.status='active')) as captains,
+      coalesce(b.requests_manual, (select count(*)::int from requests r where r.bot_id=b.id and r.status='open')) as requests,
+      (b.group_invite is not null) as "groupLinked", (b.admin_url is not null) as "adminLinked"
     from bots b order by b.id`);
   res.json({ updatedAt: new Date().toISOString(), capacity: cap.rows[0] ? cap.rows[0].n : 250, bots: rows });
 }));
