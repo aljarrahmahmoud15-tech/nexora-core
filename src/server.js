@@ -95,11 +95,14 @@ app.use('/admin', pageHeaders, express.static(path.join(PUB, 'admin'), { index: 
 app.use('/', (req, res, next) => (req.path.startsWith('/api') ? next() : pageHeaders(req, res, next)),
   express.static(PUB, { index: 'index.html' }));
 
-app.use((req, res) => res.status(404).json({ error: 'not_found' }));
-app.use((err, req, res, next) => { // eslint-disable-line no-unused-vars
-  console.error(err);
-  res.status(500).json({ error: 'server_error' });
-});
+// Registered only AFTER the modules are mounted, otherwise the 404 would catch their routes first.
+function addFallbacks() {
+  app.use((req, res) => res.status(404).json({ error: 'not_found' }));
+  app.use((err, req, res, next) => { // eslint-disable-line no-unused-vars
+    console.error(err);
+    res.status(500).json({ error: 'server_error' });
+  });
+}
 
 // The schema is idempotent, so it is applied on every boot: no shell is needed on the host.
 async function migrate() {
@@ -110,5 +113,6 @@ async function migrate() {
 
 migrate()
   .then(loadModules)
+  .then(addFallbacks)
   .then(() => app.listen(process.env.PORT || 8788, () => console.log('NEXORA core up')))
   .catch((e) => { console.error(e); process.exit(1); });
